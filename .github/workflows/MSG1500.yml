@@ -1,6 +1,6 @@
 # Build TurBoTse's kernal4.4 Padavan
 
-name: build custom
+name: MSG1500
 
 on:
   workflow_dispatch:
@@ -60,7 +60,7 @@ on:
         - XY-C1
         - ZTE-E8820S
         - ZTE-E8820V2
-        default: K2P
+        default: MSG1500
       toolchain:
         description: 'Select the compilation toolchain'
         required: true
@@ -84,7 +84,7 @@ on:
       cpufreq:
         description: 'CPU Frequency (MHz)'
         type: boolean
-        default: false
+        default: true
       mt7621_oc:
         description: '1000Mhz=0x312 1100Mhz=0x362 1120Mhz=0x372 1200Mhz=0x3B2'
         type: choice
@@ -93,6 +93,7 @@ on:
         - '0x362'
         - '0x372'
         - '0x3B2'
+        default: '0x312'
       plugins:
         description: 'String JSON list of plug-ins'
         required: true
@@ -207,6 +208,7 @@ jobs:
           echo "CONFIG_FIRMWARE_INCLUDE_VLMCSD=${{env.vlmcsd}}" >> .config
           echo "CONFIG_FIRMWARE_INCLUDE_TTYD=${{env.ttyd}}" >> .config
           echo "CONFIG_FIRMWARE_INCLUDE_IPERF3=${{env.iperf3}}" >> .config
+          echo "CONFIG_FIRMWARE_INCLUDE_ZEROTIER=y" >> .config
           # cpufreq
           if ${{ github.event.inputs.cpufreq == 'true' }}; then
             echo "CONFIG_FIRMWARE_INCLUDE_OC=y" >> .config
