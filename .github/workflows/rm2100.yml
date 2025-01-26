@@ -1,4 +1,4 @@
-name: 编译TurBoTse-Padavan-4.4
+name: 编译 tsl0922/padavan4.4
 
 on:
   workflow_dispatch:
@@ -41,17 +41,17 @@ on:
       plugins:
         description: '请选择你需要集成的插件 y 表示集成  n 表示不集成'
         required: true
-        default: '{"httpd":"y","vpncli":"n","vpncmd":"n","ss":"y","v2ray":"n","xray":"y","trojan":"y","singbox":"n","naiveproxy":"n","ssobfs":"n","dnsforwarder":"n","adbyby":"y","adguardhome":"n","smartdns":"y","aliddns":"n","zerotier":"n","ddnsto":"n","wireguard":"n","frpc":"n","aldrive":"n","sqm":"n","mentohust":"n","scutclient":"n","njitclient":"n","minieap":"n","dogcom":"n","transmission":"n","aria":"n","ariaweb":"n"}'
+        default: '{"httpd":"n","vpncli":"n","vpncmd":"n","ss":"y","v2ray":"n","xray":"y","trojan":"y","singbox":"n","naiveproxy":"n","ssobfs":"n","dnsforwarder":"n","adbyby":"y","adguardhome":"n","smartdns":"y","aliddns":"n","zerotier":"n","ddnsto":"n","wireguard":"n","frpc":"n","aldrive":"n","sqm":"n","mentohust":"n","scutclient":"n","njitclient":"n","minieap":"n","dogcom":"n","transmission":"n","aria":"n","ariaweb":"n"}'
       firmwarever:
         description: '自定义固件版本号，默认为当天编译日期'
         required: false
-        default: ''
+        default: '$(date +"%Y%m%d")'
 env:
   REPOSITORY_URL: https://github.com/vinceluv88/padavan-.git
   WORK_PATH: /opt/padavan-4.4
   TIME_ZONE: Asia/Shanghai
   FIRMWARE_DATEPREFIX: $(date +"%Y%m%d")
-  FIRMWARE_AUTHOR: TurBoTse
+  FIRMWARE_AUTHOR: vinceluv
   FIRMWARE_PATH: /opt/firmwares
   firmwarever: "${{ github.event.inputs.firmwarever }}"
 jobs:
