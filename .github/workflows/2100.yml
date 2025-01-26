@@ -104,8 +104,7 @@ on:
         description: 'String JSON list of plug-ins'
         required: true
         type: string
-        default: '{"ss":"y","v2ray":"n","xray":"y","trojan":"y","ssobfs":"y","smartdns":"y","vlmcsd":"y","ttyd":"n","iperf3":"n"}'
-      customization:
+        default: '{"httpd":"y","vpncli":"n","vpncmd":"n","ss":"y","v2ray":"n","xray":"y","trojan":"y","singbox":"n","naiveproxy":"n","ssobfs":"n","dnsforwarder":"n","adbyby":"y","adguardhome":"n","smartdns":"y","aliddns":"n","zerotier":"n","ddnsto":"n","wireguard":"n","frpc":"n","aldrive":"n","sqm":"n","mentohust":"n","scutclient":"n","njitclient":"n","minieap":"n","dogcom":"n","transmission":"n","aria":"n","ariaweb":"n"}'
         description: 'String JSON list of Customization'
         required: true
         type: string
