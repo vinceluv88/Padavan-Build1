@@ -1,3 +1,4 @@
+
 # Build TurBoTse's kernal4.4 Padavan
 
 name: build custom
@@ -31,9 +32,12 @@ on:
         - JCG-Q20
         - JCG-Q20-PB
         - JCG-Y2
+        - JDCLOUD-RE-CP-02
+        - JDCLOUD-RE-SP-01B
         - K2P
         - K2P-NANO
         - K2P-USB
+        - KOMI-A8
         - MI-4
         - MI-R3G
         - MI-R3P-PB
@@ -50,19 +54,19 @@ on:
         - NEWIFI3
         - QM-B1
         - R2100
-        - RE-CP-02
-        - RE-SP-01B
         - RM2100
         - RT-AC85P
         - SIM-AX1800T
         - TX1801
         - WDR8620
+        - WRL18M4GD
         - WE410443-TC
         - WIA3300-10
         - WR1200JS
         - XY-C1
         - ZTE-E8820S
         - ZTE-E8820V2
+        - ZTT-RX6000
         default: K2P
       toolchain:
         description: 'Select the compilation toolchain'
@@ -100,7 +104,7 @@ on:
         description: 'String JSON list of plug-ins'
         required: true
         type: string
-        default: '{"ss":"y","v2ray":"n","xray":"y","trojan":"y","singbox":"y","adbyby":"y","ssobfs":"n","smartdns":"n","vlmcsd":"y","ttyd":"n","iperf3":"n"}'
+        default: '{"ss":"y","v2ray":"n","xray":"y","trojan":"y","ssobfs":"y","smartdns":"y","vlmcsd":"y","ttyd":"n","iperf3":"n"}'
       customization:
         description: 'String JSON list of Customization'
         required: true
@@ -110,9 +114,9 @@ on:
         type: boolean
         description: 'Compile the nano version'
         default: false
-      release:
+      oldreleases:
         type: boolean
-        description: 'Upload firmware to release'
+        description: 'Delete old releases'
         default: true
       oldworkflow:
         type: boolean
@@ -120,6 +124,9 @@ on:
         default: true
 env:
   FIRMWARE_AUTHOR: TurBoTse
+  FIRMWARE_BRANCH: main
+  FIRMWARE_REPO: padavan
+  FIRMWARE_URL: https://github.com/TurBoTse/padavan.git
   TOOLCHAIN_ROOT: toolchain/toolchain-mipsel
   TOOLCHAIN_URL: https://github.com/TurBoTse/padavan/releases/download/toolchain
 jobs:
@@ -142,18 +149,22 @@ jobs:
           key: ${{ matrix.target }}-${{ matrix.toolchaingcc }}
       - uses: actions/setup-go@main
         with:
-          go-version: '1.22.3'
+          go-version: '1.23.5'
           check-latest: true
           cache: false
       - name: Prepare environment
         run: |
-          sudo apt-get update && sudo apt-get install -y libtool-bin gperf python3-docutils autopoint gettext ccache
-          echo "TRUNK_DIR=${{ github.workspace }}/trunk" >> $GITHUB_ENV
+          sudo apt-get update && sudo apt-get install -y unzip libtool-bin ccache curl cmake gperf gawk flex bison nano xxd \
+            fakeroot kmod cpio bc zip git python3-docutils gettext automake autopoint \
+            texinfo build-essential help2man pkg-config zlib1g-dev libgmp3-dev \
+            libmpc-dev libmpfr-dev libncurses5-dev libltdl-dev wget libc-dev-bin liblzma-dev
+          echo "TRUNK_DIR=${{ github.workspace }}/$FIRMWARE_REPO/trunk" >> $GITHUB_ENV
           echo "Compilation_time=$(TZ='Asia/Shanghai' date +%Y%m%d)" >> $GITHUB_ENV
-      - name: Prepare toolchain
+      - name: Download sources and toolchain
         run: |
-          mkdir -p ${{ github.workspace }}/$TOOLCHAIN_ROOT
-          curl -fSsLo- $TOOLCHAIN_URL/${{ matrix.toolchaingcc }}.tar.xz | tar Jxv -C ${{ github.workspace }}/$TOOLCHAIN_ROOT
+          git clone -b $FIRMWARE_BRANCH --depth=1 $FIRMWARE_URL $FIRMWARE_REPO
+          mkdir -p $FIRMWARE_REPO/$TOOLCHAIN_ROOT
+          curl -fSsLo- $TOOLCHAIN_URL/${{ matrix.toolchaingcc }}.tar.xz | tar Jxv -C $FIRMWARE_REPO/$TOOLCHAIN_ROOT
       - name: Parse the string JSON list
         run: |
           echo "lanip=${{fromJson(inputs.customization).lanip}}" >> $GITHUB_ENV
@@ -185,11 +196,12 @@ jobs:
           fi; done
       - name: Modify and customize
         run: |
-          sed -i '/cp -f/d' ${{ github.workspace }}/Makefile
+          sed -i '/cp -f/d' $FIRMWARE_REPO/Makefile
+          # if [ -d custom/trunk ]; then cp -rf custom/trunk/* ${{ env.TRUNK_DIR }}/; fi
+          sh custom/scripts/setip.sh '${{ env.lanip }}' '${{ env.TRUNK_DIR }}/user/shared/src/defaults.h' '${{ env.TRUNK_DIR }}/user/www/dict/CN.dict'
+          sh custom/scripts/setaccount.sh '${{ env.signaccount }}' '${{ env.signpassword }}' '${{ env.TRUNK_DIR }}/user/shared/src/defaults.h'
+          sh custom/scripts/setwifi.sh '${{ env.wifi2gssid }}' '${{ env.wifi2gpsk }}' '${{ env.wifi5gssid }}' '${{ env.wifi5gpsk }}' '${{ env.TRUNK_DIR }}/user/shared/src/defaults.h'
           cd ${{ env.TRUNK_DIR }}
-          sh ./custom/scripts/setip.sh '${{ env.lanip }}' './user/shared/src/defaults.h' './user/www/dict/CN.dict'
-          sh ./custom/scripts/setaccount.sh '${{ env.signaccount }}' '${{ env.signpassword }}' './user/shared/src/defaults.h'
-          sh ./custom/scripts/setwifi.sh '${{ env.wifi2gssid }}' '${{ env.wifi2gpsk }}' '${{ env.wifi5gssid }}' '${{ env.wifi5gpsk }}' './user/shared/src/defaults.h'
           if [ ! -f configs/templates/${{ matrix.target }}.config ]; then
             echo "configs/templates/${{ matrix.target }}.config not found"
           exit 0
@@ -212,6 +224,7 @@ jobs:
           fi
       - name: Start build firmware
         run: |
+          cd $FIRMWARE_REPO
           make ${{ matrix.target }} TOOLCHAIN=${{ matrix.toolchain }}
           nano=""
           if ${{ github.event.inputs.nanoversion == 'true' }}; then
@@ -226,15 +239,21 @@ jobs:
       - uses: actions/upload-artifact@main
         with:
           name: ${{ matrix.target }}-${{ matrix.toolchaingcc }}
-          path: trunk/firmwares/*.trx
+          path: ${{ env.TRUNK_DIR }}/firmwares/*.trx
       - uses: ncipollo/release-action@main
-        if: ${{ github.event.inputs.release == 'true' }}
         with:
-          commit: ${{ github.sha }}
+          commit: main
           tag: ${{ env.Compilation_time }}
-          artifacts: trunk/firmwares/*.trx
+          artifacts: ${{ env.TRUNK_DIR }}/firmwares/*.trx
           allowUpdates: true
           omitBodyDuringUpdate: true
+      - uses: dev-drprasad/delete-older-releases@master
+        if: ${{ github.event.inputs.oldreleases == 'true' }}
+        with:
+          keep_latest: 1
+          delete_tags: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - uses: Mattraks/delete-workflow-runs@main
         if: ${{ github.event.inputs.oldworkflow == 'true' }}
         with:
