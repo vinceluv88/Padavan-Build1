@@ -189,11 +189,6 @@ jobs:
         texinfo build-essential help2man pkg-config zlib1g-dev libgmp3-dev \
         libmpc-dev libmpfr-dev libncurses5-dev libltdl-dev wget libc-dev-bin libev-dev
         sudo timedatectl set-timezone "$TIME_ZONE"
-    - name: Build firmware
-      run: |
-        make clean
-        make menuconfig
-        make -j$(nproc)
     - name: 克隆padavan源码
       run: |
         git clone --depth=1 $REPOSITORY_URL $WORK_PATH
